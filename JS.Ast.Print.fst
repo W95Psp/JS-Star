@@ -70,12 +70,12 @@ and print_js_expr (e: js_expr)
   | EAbs args body -> [par ([par [OSeparatedList comma (map (fun a -> ONest (print_js_ident a)) args)]; OKeyword true "=>"] @ print_js_expr body)]
   | EFunction fn -> [par (print_js_function fn)]
   | EVar name -> print_js_ident name
-  | EApp f this args ->  let all = let args' = map (fun a -> admit (); ONest (print_js_expr a)) (admit (); args) in
+  | EApp f this args ->  let all = let args' = map (fun a -> ONest (print_js_expr a)) (smaller e args) in
                         if this=EConst CNull || this=EConst CUndefined
                         then print_js_expr f @ [par [OSeparatedList comma args']]
                         else print_js_expr f @ [dot;OIdentitier None "apply"] @ [par (print_js_expr this @ [comma; sq [OSeparatedList comma args']])]
                         in [par all]
-  | ENew cons args ->  let args' = map (fun a -> admit (); ONest (print_js_expr a)) (admit (); args) in
+  | ENew cons args ->  let args' = map (fun a -> ONest (print_js_expr a)) (smaller e args) in
                       [par ([OKeyword true "new"] @ print_js_expr cons @ [par [OSeparatedList comma args']])]
   | EGet o key ->  print_js_expr o @ [sq (print_js_expr key)]
   | EAssign o v -> [par (print_js_expr o @ [kequal] @ print_js_expr v) ]

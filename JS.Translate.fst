@@ -3,6 +3,7 @@ module JS.Translate
 open FStar.List.Tot
 open JS.Ast
 open JS.Ast.Utils
+module O = Output
 
 type constructor
   = { name: js_id
@@ -81,19 +82,19 @@ let rec zip (a: list 'a) (b: list 'b) =
   | a_hd::a_tl, b_hd::b_tl -> (a_hd,b_hd)::zip a_tl b_tl
   | _ -> []
   
-let rec js_condition_of_pattern_match (p: pattern_match) (head: js_expr)
+let rec js_condition_of_pattern_match (p: pattern_match) (head: js_expr): Tot js_expr (decreases p)
   = match p with
   | JPat_Constant e -> head ===. e
-  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc &&. js_condition_of_pattern_match pat (admit (); (EGet head (idname name))))
+  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc &&. js_condition_of_pattern_match (admit (); pat) (EGet head (idname name)))
                                     (head `instanceOfCons` cons)
                                     (zip args (map snd cons.args))
   | JPat_Var _ -> EConst (CBool true)
 
 let rec js_bindings_of_pattern_match (p: pattern_match) (head: js_expr)
-  : list (js_id * js_expr)
+  : Tot (list (js_id * js_expr)) (decreases p)
   = match p with
   | JPat_Constant e -> []
-  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc @ js_bindings_of_pattern_match pat (admit (); (EGet head (idname name))))
+  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc @ js_bindings_of_pattern_match (admit (); pat) (EGet head (idname name)))
                                     []
                                     (zip args (map snd cons.args))
   | JPat_Var v -> [(v, head)]
@@ -377,6 +378,3 @@ let term_to_js_with_dep (t: term) (main_wrapper: js_expr -> js_stmt) (ignore_nam
     let lets_js = Tactics.map (fun x -> js_of_sg_view_let dico x) lets in
     let inductives_js = map js_of_constructor dico in
     sseq (inductives_js @ lets_js @ [main_wrapper (term_to_js_ast dico t)])
-
-
-
