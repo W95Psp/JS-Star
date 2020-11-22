@@ -18,9 +18,9 @@ let (===.) = EBinaryOp JsBin_Eq
 let (&&.) = EBinaryOp JsBin_And
 
 let wrap_as_expr (s: js_stmt)
-  = let h s = EApp (EFunction (JSFunction None [] s)) null [] in
+  = let h s = EApp (EFunction (JSFunction None [] s)) [] in
     match s with
-    | SReturn (EApp (EFunction (JSFunction None [] s')) thisArg []) -> if thisArg = null then h s' else h s
+    | SReturn (EApp (EFunction (JSFunction None [] s')) []) -> h s'
     | _ -> h s
 
 let rec replace_char_str (c r: string) (s: string)
