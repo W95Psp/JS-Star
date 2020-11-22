@@ -26,27 +26,30 @@ let make_implicit_abs v (body: js_expr) (count: nat): nat & js_expr =
   // let count = count + 1 in
   let bodyHolder = ReservedId count in
   count,
-  EApp (eFunction None [] (
-    sseq
-      [ SLet v null
-      ; SLet bodyHolder body
-      ; SAssign (EGet (EVar bodyHolder) (str "feedImplicit")) (eFunction None [v] (
-                // TODO: here body is duplicated, we could circumvent
-                // this by having a binding `bodyHolder = v => body v`
-                // However, we should NOT set a new value to `v`
-                SReturn body
-        ))
-      ; SReturn (EVar bodyHolder)
-      ]
-  )) null []
+  JS.Ast.DSL.(
+    EApp (eFunction None [] (
+      sseq
+        [ SLet v null
+        ; SLet bodyHolder body
+        ; SAssign ((EVar bodyHolder).(str "feedImplicit")) (eFunction None [v] (
+                  // TODO: here body is duplicated, we could circumvent
+                  // this by having a binding `bodyHolder = v => body v`
+                  // However, we should NOT set a new value to `v`
+                  SReturn body
+          ))
+        ; SReturn (EVar bodyHolder)
+        ]
+    )) []
+  )
   end else count, (eFunction None [v] (SReturn body))
 
 let make_implicit_app f implicit_arg: js_expr
   = if enable_optional_implicit
     then
-    let feedImplicit = EGet f (str "feedImplicit") in
-    EApp (EBinaryOp JsBin_Or feedImplicit f) null [implicit_arg]
-    else EApp f null [implicit_arg]
+    JS.Ast.DSL.(
+      EApp (JS.Ast.DSL.(f.(str "feedImplicit")) ||. f) [implicit_arg]
+    )
+    else EApp f [implicit_arg]
 
 (*** Miscelanous helpers ***)
 

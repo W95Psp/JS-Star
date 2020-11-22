@@ -7,6 +7,7 @@ open FStar.List.Tot
 open JS.Ast
 open JS.Ast.Utils
 open JS.Ast.Print
+open JS.Ast.DSL
 open JS.Translate
 
 let writeToFile file content
@@ -20,8 +21,8 @@ let (!!) n = EVar (JSId None n)
 let console_log (v: js_expr)
   : js_stmt
   = let console = !!"console" in
-    let console_log = console `EGet` (str "log") in
-    SExpr (EApp console_log null [v])
+    let console_log = console.(str "log") in
+    SExpr (console_log @@@ [v])
     
 let primitives: list (name * js_stmt)
   = let h (name: string) (args: list js_id) (body: js_expr) =
@@ -62,7 +63,7 @@ let _ = run_tactic (fun _ ->
   let blacklist = map fst primitives @ blacklist in
   let x = term_to_js_with_dep (`(
     hey
-  )) (fun e -> console_log (EApp e null [EConst (CInt 5)]) ) blacklist in
+  )) (fun e -> console_log (e @@@ [EConst (CInt 5)]) ) blacklist in
   let x = sseq (map snd primitives) `SSeq` (x) in
   writeToFile "out.js" (string_of_js_stmt x)
 )

@@ -5,6 +5,7 @@ open JS.Ast
 open JS.Ast.Utils
 open JS.Translate.Helpers
 module O = Output
+open JS.Ast.DSL
 
 type constructor
   = { name: js_id
@@ -13,14 +14,14 @@ type constructor
 type constructor_dico = list constructor
     
 let mkCons (c: constructor) (args: list js_expr): js_expr
-  = ENew (EVar c.name) args
+  = EVar c.name `new_` args
 
 let instanceOfCons (v: js_expr) (c: constructor): js_expr
-  = EBinaryOp JsBin_InstanceOf v (EGet (EVar c.name) (str "t"))
+  = v `instanceof` (EVar c.name).(str "t")
 
 let js_of_constructor (c: constructor)
   = let thisCons = sFunction (Some c.name) (map snd c.args) (
-        let assign_arg (arg: js_id) = ( (EConst CThis `EGet` idname arg) `SAssign` EVar arg) in
+        let assign_arg (arg: js_id) = (this.(idname arg) <-. EVar arg) in
          sseq (map assign_arg (map snd c.args))
       ) in
     let mk_e body (explicit, arg) = 
@@ -30,13 +31,13 @@ let js_of_constructor (c: constructor)
     let mk_curried args body = fold_left mk_e body (rev args) in
     let creatorLet = JSId None "creator" in
     let creator = mk_curried c.args (
-      ENew (EVar c.name) (map EVar (map snd c.args))
+      EVar c.name `new_` map EVar (map snd c.args)
     ) in
     SLet c.name (wrap_as_expr (
        sseq
          [ thisCons
          ; SLet creatorLet creator
-         ; SAssign (EGet (EVar creatorLet) (str "t")) (EVar c.name)
+         ; SAssign ((EVar creatorLet).(str "t")) (EVar c.name)
          ; SReturn (EVar creatorLet)
          ]
     ))
@@ -46,11 +47,10 @@ type pattern_match =
     | JPat_Cons     : constructor -> list pattern_match -> pattern_match
     | JPat_Var      : js_id -> pattern_match
 
-
 let rec js_condition_of_pattern_match (p: pattern_match) (head: js_expr): Tot js_expr (decreases p)
   = match p with
   | JPat_Constant e -> head ===. e
-  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc &&. js_condition_of_pattern_match (admit (); pat) (EGet head (idname name)))
+  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc &&. js_condition_of_pattern_match (admit (); pat) (head.(idname name)))
                                     (head `instanceOfCons` cons)
                                     (zip args (map snd cons.args))
   | JPat_Var _ -> EConst (CBool true)
@@ -59,7 +59,7 @@ let rec js_bindings_of_pattern_match (p: pattern_match) (head: js_expr)
   : Tot (list (js_id * js_expr)) (decreases p)
   = match p with
   | JPat_Constant e -> []
-  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc @ js_bindings_of_pattern_match (admit (); pat) (EGet head (idname name)))
+  | JPat_Cons cons args -> fold_left (fun acc (pat, name) -> acc @ js_bindings_of_pattern_match (admit (); pat) (head.(idname name)))
                                     []
                                     (zip args (map snd cons.args))
   | JPat_Var v -> [(v, head)]
@@ -85,7 +85,7 @@ let js_of_patterns_match (pb: list (pattern_match * js_expr)) (head: js_expr) (c
       SThrow (
         EBinaryOp JsBin_Plus
           (str "Failed to pattern match ")
-          (head `EGet` str "constructor" `EGet` str "name")
+          (head.(str "constructor").(str "name"))
       )
     end
 

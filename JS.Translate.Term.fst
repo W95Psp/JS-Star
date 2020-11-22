@@ -7,6 +7,7 @@ open JS.Ast.Utils
 open JS.Translate.Helpers
 open JS.Translate.Constructor
 module O = Output
+open JS.Ast.DSL
 
 let c_unit =
   { name = JSId None "Unit"
@@ -49,13 +50,13 @@ let rec term_to_js_ast' (dico: constructor_dico) (t: term) (count: nat)
     let count, arg = recurse arg count in
     count, 
     ( match aqual with
-    | Q_Explicit -> EApp hd null [arg]
+    | Q_Explicit -> hd @@@ [arg]
     | _ -> make_implicit_app hd arg)
   | Tv_Abs   bv body -> 
     let count, body = recurse body count in
     let jid = binder_to_js_id bv in
     ( match inspect_binder bv with
-    | _, Q_Explicit -> count, EAbs [jid] body
+    | _, Q_Explicit -> count, EArrowFun [jid] body
     | _ -> make_implicit_abs jid body count
     )
   | Tv_Arrow _ _ | Tv_Type _ | Tv_Refine _ _ | Tv_AscribedT _ _ _ | Tv_AscribedC _ _ _ | Tv_Uvar  _ _ -> count, null

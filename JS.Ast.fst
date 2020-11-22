@@ -14,7 +14,6 @@ type js_binary_op =
   | JsBin_Minus | JsBin_Plus | JsBin_Mul | JsBin_Div
   | JsBin_Rem | JsBin_Exp
   | JsBin_InstanceOf
-  | JsBin_FunctionCall
   | JsBin_MemberAccess
   | JsBin_ComputedMemberAccess
   | JsBin_Assign
@@ -47,7 +46,6 @@ let precedence_of_binary_op = function
   | JsBin_Exp                  -> 15, Some RightToLeft
   | JsBin_Div                  -> 15, Some LeftToRight
   | JsBin_Rem                  -> 15, Some LeftToRight
-  | JsBin_FunctionCall         -> 20, Some LeftToRight
   | JsBin_MemberAccess         -> 20, Some LeftToRight
   | JsBin_ComputedMemberAccess -> 20, Some LeftToRight
 
@@ -65,6 +63,7 @@ type js_expr
     | EFunction: fn:js_function -> js_expr
     | EVar: name: js_id -> js_expr
     | EApp: fn: js_expr -> args: list js_expr -> js_expr
+    | ENew: fn: js_expr -> args: list js_expr -> js_expr
     | EUnaryOp: op:js_unary_op -> v:js_expr -> js_expr
     | EBinaryOp: op:js_binary_op -> v:js_expr -> w:js_expr -> js_expr
     | EConst: c: js_const -> js_expr
