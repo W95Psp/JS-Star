@@ -1,10 +1,13 @@
+/// This module defines an AST for JavaScript
 module JS.Ast
 
 open FStar.String
 open FStar.List.Tot
 module R = FStar.Reflection
-open Output
+open Doc
 
+/// Binary and unary operators. Note that new, member access
+/// assignation, comma sequence are handled as operators
 type js_unary_op = 
   | JsUnary_Minus | JsUnary_Plus | JsUnary_Not | JsUnary_TypeOf
   | JsUnary_New
@@ -19,15 +22,14 @@ type js_binary_op =
   | JsBin_Assign
   | JsBin_Sequence
 
+/// Definine the associativity for every operators
 type associatvity = | LeftToRight | RightToLeft
-
 let precedence_of_unary_op = function
   | JsUnary_Not    -> 17, Some RightToLeft
   | JsUnary_Plus   -> 17, Some RightToLeft
   | JsUnary_Minus  -> 17, Some RightToLeft
   | JsUnary_TypeOf -> 17, Some RightToLeft
   | JsUnary_New    -> 19, Some RightToLeft
-
 let precedence_of_binary_op = function
   | JsBin_Sequence             -> 1, Some LeftToRight
   | JsBin_Assign               -> 3, Some RightToLeft
@@ -49,14 +51,11 @@ let precedence_of_binary_op = function
   | JsBin_MemberAccess         -> 20, Some LeftToRight
   | JsBin_ComputedMemberAccess -> 20, Some LeftToRight
 
+/// A JS identifier is a string along with (possibly) a range, or a
+/// special ID (that should be guaranteed no to clash with a JSId
+/// name, this is a TODO)
 type js_id = | JSId : range:option range_info -> s:string -> js_id
              | ReservedId : nat -> js_id
-
-let js_id_eq (i j: js_id)
-  = match i, j with
-  | JSId ir is, JSId jr js -> is = js
-  | ReservedId i, ReservedId j -> i = j
-  | _ -> false
 
 type js_expr
   = | EArrowFun: args: list js_id -> body: js_expr -> js_expr

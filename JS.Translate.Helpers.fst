@@ -4,7 +4,7 @@ open FStar.Tactics
 open FStar.List.Tot
 open JS.Ast
 open JS.Ast.Utils
-module O = Output
+module O = Doc
 
 
 (*** Optionnal implicit support ***)

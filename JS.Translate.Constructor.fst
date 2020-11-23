@@ -4,7 +4,7 @@ open FStar.List.Tot
 open JS.Ast
 open JS.Ast.Utils
 open JS.Translate.Helpers
-module O = Output
+module O = Doc
 open JS.Ast.DSL
 
 type constructor
