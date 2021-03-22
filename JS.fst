@@ -1,4 +1,4 @@
-module Main
+module JS
 
 open FStar.Tactics
 open FStar.Reflection
@@ -34,46 +34,32 @@ let primitives: list (name * js_stmt)
     in
     [ h (`%int) [] (str "Type:INT")
     ; h (`%nat) [] (str "Type:NAT")
+    ; h (`%string) [] (str "Type:STRING")
     ; h (`%(+)) [!"x";!"y"] (EBinaryOp JsBin_Plus (!!"x") (!!"y"))
+    ; h (`%(op_Multiply)) [!"x";!"y"] (EBinaryOp JsBin_Mul (!!"x") (!!"y"))
+    ; h (`%(FStar.Mul.op_Star)) [!"x";!"y"] (EBinaryOp JsBin_Mul (!!"x") (!!"y"))
     ; h (`%op_Subtraction) [!"x";!"y"] (EBinaryOp JsBin_Minus (!!"x") (!!"y"))
     ; h (`%op_Equality) [!"tvar";!"x";!"y"] (EBinaryOp JsBin_Eq (!!"x") (!!"y"))
     ; h (`%op_LessThanOrEqual) [!"x";!"y"] (EBinaryOp JsBin_Le (!!"x") (!!"y"))
+    ; h (`%string_of_int) [!"s"] (EBinaryOp JsBin_Plus (EConst (CString "")) (!!"s"))
+    ; h (`%op_Hat) [!"x";!"y"] (EBinaryOp JsBin_Plus (!!"x") (!!"y"))
     ]
 
-
-let rec f (x: int): int = 
-  if x <= 0 then 0
-           else x + f (x - 1)
-           
-let rec test (n: int): list int = 
-  let t = f n in
-  if n <= 0
-  then [t]
-  else t::test (n-1)
-
-let rec sum (l: list int): int
-  = match l with
-  | [] -> 0
-  | hd::tl -> hd + sum tl
-
-let hey (n: int): int
-  = sum (test 4) + fold_left (fun y x -> y + x) 0 (test 4)
-
-let tup2_to_string (x, y) = "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
-
-let range_to_string (r: range) = 
-    let r = inspect_range r in
-    "{" ^ r.file_name ^ " : " ^ tup2_to_string r.start_pos ^ "-> " ^ tup2_to_string r.end_pos ^ "}"
-
-let _ = run_tactic (fun _ ->
+let term_to_js_stmt (wrapper: js_expr -> js_stmt) (term: term): Tac js_stmt = 
   let blacklist = map fst primitives @ blacklist in
-  let x = term_to_js_with_dep (`(
-    hey
-  )) (fun e -> console_log (e @@@ [EConst (CInt 5)]) ) blacklist in
-  let x = sseq (map snd primitives) `SSeq` (x) in
-  writeToFile "out.js" (string_of_jsstmt x);
-  let sm = sourcemap_of_jsstmt x in
+  let js_body = term_to_js_with_dep term wrapper blacklist in
+  let js_primitive = sseq (map snd primitives) in
+  let js_code = js_primitive `SSeq` js_body in
+  js_code
+
+let term_to_js wrapper (term: term): Tac string =
+  string_of_jsstmt (term_to_js_stmt wrapper term)
+
+let term_to_js_files (basename: string) wrapper (term: term): Tac unit =
+  let stmt = term_to_js_stmt wrapper term in
+  writeToFile (basename ^ ".js") (string_of_jsstmt stmt);
+  let sm = sourcemap_of_jsstmt stmt in
   let l = map (fun (s, e, r) -> "[" ^ Doc.string_of_position s ^ " .. " ^ Doc.string_of_position e ^ "] => " ^ Doc.string_of_range_info r ) sm in
-  writeToFile "out.sourcemap" (String.concat "\n" l ^ "\n\n\n\n\n")
-)
+  writeToFile (basename ^ ".sourcemap") (String.concat "\n" l ^ "\n\n\n\n\n")
+
 

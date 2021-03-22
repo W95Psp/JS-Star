@@ -92,11 +92,13 @@ and collect_names_of_pat (p: pattern)
   | Pat_Cons fv l -> inspect_fv fv::(flatten (Tactics.map collect_names_of_pat (map fst l)))
   | _ -> []
 
+let temp_fix_pr2197 (n: name): bool
+  = false
+
 /// Given a toplevel name, `names_of_name` inspect the toplevel and
 /// returns a list of the names it directly use.
 let names_of_name (n: name): Tac (list name) 
-  = 
-  match lookup_typ (top_env ()) n with
+  = match lookup_typ (top_env ()) n with
   | Some f -> (match inspect_sigelt f with
            | Sg_Let _ _ _ _ d -> collect_names d
            | _ -> [])

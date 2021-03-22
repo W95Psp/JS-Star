@@ -15,7 +15,7 @@ let mk_js_constructor (n: name) (t: typ): Tac constructor
     ; args = Tactics.map (fun b -> 
            let _, q = inspect_binder b in
            ( match q with
-           | Q_Explicit -> true
+           | (Q_Explicit, _) -> true
            | _ -> false
            ), JSId (Some (O.range_to_range_info (range_of_binder b))) (name_of_binder b)
       ) bds

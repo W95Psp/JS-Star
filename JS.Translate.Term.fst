@@ -67,7 +67,7 @@ let rec term_to_js_ast' (dico: constructor_dico) (t: term) (count: nat)
     let count, body = recurse body count in
     let jid = binder_to_js_id bv r in
     ( match inspect_binder bv with
-    | _, Q_Explicit -> count, EArrowFun [jid] body
+    | _, (Q_Explicit, _) -> count, EArrowFun [jid] body
     | _ -> make_implicit_abs jid body count
     )
   | Tv_Arrow _ _ | Tv_Type _ | Tv_Refine _ _ | Tv_AscribedT _ _ _ | Tv_AscribedC _ _ _ | Tv_Uvar  _ _ -> count, null
