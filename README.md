@@ -2,7 +2,7 @@
 
 This repository provides F* meta-programs that transpile on the fly F* terms to javascript terms, using the F* normalizer.
 
-## Usability
+## Features
 I've tested it for a few programs, that works fairly nicely!
 
  - [ ] Sourcemaps
