@@ -15,7 +15,7 @@ I've tested it for a few programs, that works fairly nicely!
 
 ## Example
 
-For instance the following module transpiles `main` and write it to the file ""example.js":
+For instance the following module transpiles `main` and write it to the file `example.js`:
 
 ```fstar
 module Example
@@ -39,13 +39,13 @@ let main n =
   ]
 
 let _ = run_tactic (fun _ -> 
-  term_to_js_files "example" (fun e -> console_log (e @@@ [EConst (CInt 5)])
-                         )
-                         (`main)
+  term_to_js_files "example"
+                   (fun e -> console_log (e @@@ [EConst (CInt 5)])) // `e => console.log(e(5))`
+                   (`main)
 )
 ```
 
-Running `node example.js` gives the following output:
+Running `fstar.exe --unsafe_tactic_exec Example.fst` and then `node example.js` gives the following output:
 ```javascript
 Prims_Cons {
   a: 'Type:STRING',
