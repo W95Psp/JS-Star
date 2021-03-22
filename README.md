@@ -4,7 +4,14 @@ This repository provides F* meta-programs that transpile on the fly F* terms to 
 
 ## Usability
 I've tested it for a few programs, that works fairly nicely!
-I plan to support sourcemaps so that debugging is easier.
+
+ - [ ] Sourcemaps
+   + this is almost done already
+ - [ ] JS FFI
+   - [ ] JS effect to interact with JS's world
+   - [ ] DOM modelization
+   - [ ] Adapt [F* TODO webapp](http://raw.githack.com/W95Psp/FStar-HTTP-Server/master/todo-app.html) so that it works with this repo
+ - [ ] add `nix` build
 
 ## Example
 
