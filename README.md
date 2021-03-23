@@ -12,7 +12,8 @@ I've tested it for a few programs, that works fairly nicely!
    - [ ] DOM modelization
    - [ ] Adapt [F* TODO webapp](http://raw.githack.com/W95Psp/FStar-HTTP-Server/master/todo-app.html) so that it works with this repo
  - [ ] add `nix` build
-
+ - [ ] attribute for replacing a toplevel bya custom JS expression
+ 
 ## Example
 
 For instance the following module transpiles `main` and write it to the file `example.js`:
