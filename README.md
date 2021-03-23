@@ -8,7 +8,7 @@ I've tested it for a few programs, that works fairly nicely!
  - [ ] Sourcemaps
    + this is almost done already
  - [ ] JS FFI
-   - [ ] JS effect to interact with JS's world
+   - [x] JS effect to interact with JS's world
    - [ ] DOM modelization
    - [ ] Adapt [F* TODO webapp](http://raw.githack.com/W95Psp/FStar-HTTP-Server/master/todo-app.html) so that it works with this repo
  - [ ] add `nix` build
