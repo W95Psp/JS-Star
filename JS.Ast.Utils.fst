@@ -56,7 +56,9 @@ let elet_nonrec (vName: js_id) (value: js_expr) (body: js_expr) (counter: nat)
     counter, wrap_as_expr ( SLet (ReservedId counter) value `SSeq` SLet vName (EVar (ReservedId counter)) `SSeq` (SReturn body) )
 
 open FStar.Tactics
-let bv_to_js_id (bv: bv) r: js_id = JSId r (inspect_bv bv).bv_ppname
+let bv_to_js_id (bv: bv) r: js_id = 
+  let bvv = inspect_bv bv in
+  JSId r (bvv.bv_ppname ^ "$" ^ string_of_int bvv.bv_index)
 let fv_to_js_id (fv: fv) r: js_id = JSId r (String.concat "_" (inspect_fv fv))
 let binder_to_js_id (b: binder) r: js_id = bv_to_js_id (fst (inspect_binder b)) r
 
