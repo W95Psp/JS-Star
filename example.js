@@ -89,7 +89,7 @@ let Prims_Nil=((function (){
  return creator;
  
 })());
-let Example_main=((n) => (((Prims_Cons(Prims_string))(((Prims_op_Hat('fibonacci'))(((Prims_op_Hat((Prims_string_of_int(n))))(((Prims_op_Hat(' => '))((Prims_string_of_int((Example_fibonacci(n))))))))))))((((Prims_Cons(Prims_string))(((Prims_op_Hat('factorial'))(((Prims_op_Hat((Prims_string_of_int(n))))(((Prims_op_Hat(' => '))((Prims_string_of_int((Example_factorial(n))))))))))))((Prims_Nil(Prims_string)))))));
+let Example_main=((n) => (((Prims_Cons(Prims_string))(((Prims_op_Hat('fibonacci('))(((Prims_op_Hat((Prims_string_of_int(n))))(((Prims_op_Hat(') => '))((Prims_string_of_int((Example_fibonacci(n))))))))))))((((Prims_Cons(Prims_string))(((Prims_op_Hat('factorial('))(((Prims_op_Hat((Prims_string_of_int(n))))(((Prims_op_Hat(') => '))((Prims_string_of_int((Example_factorial(n))))))))))))((Prims_Nil(Prims_string)))))));
 let Example_fibonacci=((n) => ((function (){
  let $1=((Prims_op_LessThanOrEqual(n))(1));
  if (($1===true)){

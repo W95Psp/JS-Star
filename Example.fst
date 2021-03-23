@@ -4,6 +4,7 @@ open FStar.Tactics
 open FStar.List.Tot
 open JS
 open JS.Ast
+open JS.Translate
 open JS.Ast.DSL
 
 let rec factorial (n:nat) = 

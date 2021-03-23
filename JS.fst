@@ -33,6 +33,8 @@ let primitives: list (name * js_stmt)
         name, SLet jid (mk_curried args body)
     in
     [ h (`%int) [] (str "Type:INT")
+    ; h "Unit" [!"_"] (EConst (CNull))
+    ; h (`%unit) [] (str "Type:UNIT")
     ; h (`%nat) [] (str "Type:NAT")
     ; h (`%string) [] (str "Type:STRING")
     ; h (`%(+)) [!"x";!"y"] (EBinaryOp JsBin_Plus (!!"x") (!!"y"))
@@ -45,21 +47,29 @@ let primitives: list (name * js_stmt)
     ; h (`%op_Hat) [!"x";!"y"] (EBinaryOp JsBin_Plus (!!"x") (!!"y"))
     ]
 
-let term_to_js_stmt (wrapper: js_expr -> js_stmt) (term: term): Tac js_stmt = 
+let term_to_js_stmt' primitives (wrapper: js_expr -> js_stmt) (term: term): Tac js_stmt = 
   let blacklist = map fst primitives @ blacklist in
   let js_body = term_to_js_with_dep term wrapper blacklist in
   let js_primitive = sseq (map snd primitives) in
   let js_code = js_primitive `SSeq` js_body in
   js_code
 
-let term_to_js wrapper (term: term): Tac string =
-  string_of_jsstmt (term_to_js_stmt wrapper term)
+let term_to_js' primitives wrapper (term: term): Tac string =
+  string_of_jsstmt (term_to_js_stmt' primitives wrapper term)
 
-let term_to_js_files (basename: string) wrapper (term: term): Tac unit =
-  let stmt = term_to_js_stmt wrapper term in
+let term_to_js_files' primitives (basename: string) wrapper (term: term): Tac unit =
+  let stmt = term_to_js_stmt' primitives wrapper term in
   writeToFile (basename ^ ".js") (string_of_jsstmt stmt);
   let sm = sourcemap_of_jsstmt stmt in
   let l = map (fun (s, e, r) -> "[" ^ Doc.string_of_position s ^ " .. " ^ Doc.string_of_position e ^ "] => " ^ Doc.string_of_range_info r ) sm in
   writeToFile (basename ^ ".sourcemap") (String.concat "\n" l ^ "\n\n\n\n\n")
 
+let term_to_js_stmt (wrapper: js_expr -> js_stmt) (term: term): Tac js_stmt = 
+  term_to_js_stmt' primitives wrapper term
+
+let term_to_js wrapper (term: term): Tac string =
+  term_to_js' primitives wrapper term
+
+let term_to_js_files (basename: string) wrapper (term: term): Tac unit =
+  term_to_js_files' primitives basename wrapper term
 
