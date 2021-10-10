@@ -21,7 +21,7 @@ let f (): Js unit
   ) in
     ()
 
-let _ = run_tactic (fun _ -> 
-    computation_to_js_files "test-new" f
-  )
+// let _ = run_tactic (fun _ -> 
+//     computation_to_js_files "test-new" f
+//   )
 

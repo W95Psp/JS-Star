@@ -1,0 +1,271 @@
+diff --git a/src/reflection/FStar.Reflection.Basic.fs b/src/reflection/FStar.Reflection.Basic.fs
+index 302fb6bbec4..4756c606835 100644
+--- a/src/reflection/FStar.Reflection.Basic.fs
++++ b/src/reflection/FStar.Reflection.Basic.fs
+@@ -630,3 +630,21 @@ let push_binder e b = Env.push_binders e [b]
+ 
+ let subst (x:bv) (n:term) (m:term) : term =
+   SS.subst [NT(x,n)] m
++
++let mm_string_of_range (r: Range.range)
++  = Range.string_of_def_range r
++  ^ " && "
++  ^ Range.string_of_use_range r
++
++
++let inspect_range r
++   = let sp: Range.pos = Range.start_of_range r in
++     let ep: Range.pos = Range.end_of_range r in
++     let h p = Z.of_int_fs (Range.line_of_pos p), Z.of_int_fs (Range.col_of_pos p) in
++     { file_name = Range.file_of_range r
++     ; start_pos = h sp
++     ; end_pos   = h ep
++     }
++
++let range_of_term t = t.pos
++let range_of_sigelt t = FStar.Syntax.Util.range_of_sigelt t
+diff --git a/src/reflection/FStar.Reflection.Basic.fsi b/src/reflection/FStar.Reflection.Basic.fsi
+index 78667d63b96..915129168c2 100644
+--- a/src/reflection/FStar.Reflection.Basic.fsi
++++ b/src/reflection/FStar.Reflection.Basic.fsi
+@@ -72,3 +72,7 @@ val explode_qn     : string -> list<string>
+ val compare_string : string -> string -> Z.t
+ 
+ val push_binder    : Env.env -> binder -> Env.env
++
++val inspect_range: Range.range -> rng_view
++val range_of_term: term -> Range.range
++val range_of_sigelt: sigelt -> Range.range
+diff --git a/src/reflection/FStar.Reflection.Data.fs b/src/reflection/FStar.Reflection.Data.fs
+index ed26a2501cc..16db8c99b5d 100644
+--- a/src/reflection/FStar.Reflection.Data.fs
++++ b/src/reflection/FStar.Reflection.Data.fs
+@@ -93,6 +93,12 @@ type bv_view = {
+     bv_sort : typ;
+ }
+ 
++type rng_view = {
++    file_name: string;
++    start_pos: Z.t * Z.t;
++    end_pos:   Z.t * Z.t;
++}
++
+ type binder_view = bv * (aqualv * list<term>)
+ 
+ type comp_view =
+@@ -197,6 +203,8 @@ let fstar_refl_branch           = mk_refl_data_lid_as_term "branch"
+ let fstar_refl_branch_fv        = mk_refl_data_lid_as_fv   "branch"
+ let fstar_refl_bv_view          = mk_refl_data_lid_as_term "bv_view"
+ let fstar_refl_bv_view_fv       = mk_refl_data_lid_as_fv   "bv_view"
++let fstar_refl_rng_view         = mk_refl_data_lid_as_term "rng_view"
++let fstar_refl_rng_view_fv      = mk_refl_data_lid_as_fv   "rng_view"
+ let fstar_refl_vconst           = mk_refl_data_lid_as_term "vconst"
+ let fstar_refl_vconst_fv        = mk_refl_data_lid_as_fv   "vconst"
+ let fstar_refl_sigelt_view      = mk_refl_data_lid_as_term "sigelt_view"
+@@ -222,6 +230,18 @@ let ref_Mk_bv =
+     ; t   = fv_to_tm fv
+     }
+ 
++let ref_Mk_rng =
++    let lid = fstar_refl_data_lid "Mkrng_view" in
++    let attr = Record_ctor (fstar_refl_data_lid "rng_view", [
++                                Ident.mk_ident ("file_name", Range.dummyRange);
++                                Ident.mk_ident ("start_pos" , Range.dummyRange);
++                                Ident.mk_ident ("end_pos"  , Range.dummyRange)]) in
++    let fv = lid_as_fv lid delta_constant (Some attr) in
++    { lid = lid
++    ; fv  = fv
++    ; t   = fv_to_tm fv
++    }
++
+ let ref_Mkvconfig =
+     let lid = PC.psconst "Mkvconfig" in
+     let attr = Record_ctor (PC.psconst "vconfig", []) in
+diff --git a/src/reflection/FStar.Reflection.Data.fsi b/src/reflection/FStar.Reflection.Data.fsi
+index 799d91f9ada..beb1362ddd8 100644
+--- a/src/reflection/FStar.Reflection.Data.fsi
++++ b/src/reflection/FStar.Reflection.Data.fsi
+@@ -93,6 +93,12 @@ type bv_view = {
+     bv_sort : typ;
+ }
+ 
++type rng_view = {
++    file_name: string;
++    start_pos: Z.t * Z.t;
++    end_pos:   Z.t * Z.t;
++}
++
+ type binder_view = bv * (aqualv * list<term>)
+ 
+ type comp_view =
+@@ -197,6 +203,8 @@ let fstar_refl_branch           = mk_refl_data_lid_as_term "branch"
+ let fstar_refl_branch_fv        = mk_refl_data_lid_as_fv   "branch"
+ let fstar_refl_bv_view          = mk_refl_data_lid_as_term "bv_view"
+ let fstar_refl_bv_view_fv       = mk_refl_data_lid_as_fv   "bv_view"
++let fstar_refl_rng_view         = mk_refl_data_lid_as_term "rng_view"
++let fstar_refl_rng_view_fv      = mk_refl_data_lid_as_fv   "rng_view"
+ let fstar_refl_vconst           = mk_refl_data_lid_as_term "vconst"
+ let fstar_refl_vconst_fv        = mk_refl_data_lid_as_fv   "vconst"
+ let fstar_refl_sigelt_view      = mk_refl_data_lid_as_term "sigelt_view"
+@@ -220,6 +228,18 @@ let ref_Mk_bv =
+     ; t   = fv_to_tm fv
+     }
+ 
++let ref_Mk_rng =
++    let lid = fstar_refl_data_lid "Mkrng_view" in
++    let attr = Record_ctor (fstar_refl_data_lid "rng_view", [
++                                Ident.mk_ident ("file_name", Range.dummyRange);
++                                Ident.mk_ident ("start_pos" , Range.dummyRange);
++                                Ident.mk_ident ("end_pos"  , Range.dummyRange)]) in
++    let fv = lid_as_fv lid delta_constant (Some attr) in
++    { lid = lid
++    ; fv  = fv
++    ; t   = fv_to_tm fv
++    }
++
+ (* quals *)
+ let ref_Q_Explicit  = fstar_refl_data_const "Q_Explicit"
+ let ref_Q_Implicit  = fstar_refl_data_const "Q_Implicit"
+diff --git a/src/reflection/FStar.Reflection.Embeddings.fs b/src/reflection/FStar.Reflection.Embeddings.fs
+index 708e6975205..cfa639ba77c 100644
+--- a/src/reflection/FStar.Reflection.Embeddings.fs
++++ b/src/reflection/FStar.Reflection.Embeddings.fs
+@@ -506,6 +506,32 @@ let e_bv_view =
+     in
+     mk_emb embed_bv_view unembed_bv_view fstar_refl_bv_view
+ 
++
++let e_rng_view =
++    let embed_rng_view (rng:Range.range) (rngv:rng_view) : term =
++        S.mk_Tm_app ref_Mk_rng.t [S.as_arg (embed e_string rng rngv.file_name);
++                                  S.as_arg (embed (e_tuple2 e_int e_int) rng rngv.start_pos);
++                                  S.as_arg (embed (e_tuple2 e_int e_int) rng rngv.end_pos)]
++                    rng
++    in
++    let unembed_rng_view w (t : term) : option<rng_view> =
++        let t = U.unascribe t in
++        let hd, args = U.head_and_args t in
++        match (U.un_uinst hd).n, args with
++        | Tm_fvar fv, [(fl, _); (sp, _); (ep, _)] when S.fv_eq_lid fv ref_Mk_rng.lid ->
++            BU.bind_opt (unembed' w e_string fl) (fun fl ->
++            BU.bind_opt (unembed' w (e_tuple2 e_int e_int) sp) (fun sp ->
++            BU.bind_opt (unembed' w (e_tuple2 e_int e_int) ep) (fun ep ->
++            Some <| { file_name = fl ; start_pos = sp ; end_pos = ep })))
++
++        | _ ->
++            if w then
++                Err.log_issue t.pos (Err.Warning_NotEmbedded, (BU.format1 "Not an embedded rng_view: %s" (Print.term_to_string t)));
++            None
++    in
++    mk_emb embed_rng_view unembed_rng_view fstar_refl_rng_view
++
++
+ let e_comp_view =
+     let embed_comp_view (rng:Range.range) (cv : comp_view) : term =
+         match cv with
+diff --git a/src/reflection/FStar.Reflection.Embeddings.fsi b/src/reflection/FStar.Reflection.Embeddings.fsi
+index aafd5eb4b09..b749d3d5329 100644
+--- a/src/reflection/FStar.Reflection.Embeddings.fsi
++++ b/src/reflection/FStar.Reflection.Embeddings.fsi
+@@ -30,6 +30,7 @@ val e_order       : embedding<order>
+ val e_sigelt      : embedding<sigelt>
+ val e_sigelt_view : embedding<sigelt_view>
+ val e_bv_view     : embedding<bv_view>
++val e_rng_view    : embedding<rng_view>
+ val e_exp         : embedding<exp>
+ val e_attribute   : embedding<attribute>
+ val e_attributes  : embedding<list<attribute>> (* This seems rather silly, but `attributes` is a keyword *)
+diff --git a/src/reflection/FStar.Reflection.Interpreter.fs b/src/reflection/FStar.Reflection.Interpreter.fs
+index 5dfdc0839c0..d0c06a55a2a 100644
+--- a/src/reflection/FStar.Reflection.Interpreter.fs
++++ b/src/reflection/FStar.Reflection.Interpreter.fs
+@@ -229,6 +229,15 @@ let reflection_primops : list<Cfg.primitive_step> = [
+ 
+     mk2 "push_binder"           push_binder           E.e_env             E.e_binder        E.e_env
+                                 push_binder           NRE.e_env           NRE.e_binder      NRE.e_env;
++
++    mk1 "inspect_range"         inspect_range         e_range             E.e_rng_view
++                                inspect_range         NBET.e_range        NRE.e_rng_view;
++
++    mk1 "range_of_term"         range_of_term        E.e_term            e_range
++                                range_of_term        NRE.e_term          NBET.e_range;
++
++    mk1 "range_of_sigelt"       range_of_sigelt      E.e_sigelt            e_range
++                                range_of_sigelt      NRE.e_sigelt          NBET.e_range;
+ ]
+ 
+ let _ = List.iter FStar.TypeChecker.Cfg.register_extra_step reflection_primops
+diff --git a/src/reflection/FStar.Reflection.NBEEmbeddings.fs b/src/reflection/FStar.Reflection.NBEEmbeddings.fs
+index 5c31541e412..3fbb6b2bc70 100644
+--- a/src/reflection/FStar.Reflection.NBEEmbeddings.fs
++++ b/src/reflection/FStar.Reflection.NBEEmbeddings.fs
+@@ -465,6 +465,27 @@ let e_bv_view =
+     in
+     mk_emb' embed_bv_view unembed_bv_view fstar_refl_bv_view_fv
+ 
++
++let e_rng_view =
++    let embed_rng_view cb (rngv:rng_view) : t =
++        mkConstruct ref_Mk_rng.fv [] [as_arg (embed e_string cb rngv.file_name);
++                                     as_arg (embed (e_tuple2 e_int e_int) cb rngv.start_pos);
++                                     as_arg (embed (e_tuple2 e_int e_int) cb rngv.end_pos)]
++    in
++    let unembed_rng_view cb (t : t) : option<rng_view> =
++        match t.nbe_t with
++        | Construct (fv, _, [(fl, _); (sp, _); (ep, _)]) when S.fv_eq_lid fv ref_Mk_rng.lid ->
++            BU.bind_opt (unembed e_string cb fl) (fun fl ->
++            BU.bind_opt (unembed (e_tuple2 e_int e_int) cb sp) (fun sp ->
++            BU.bind_opt (unembed (e_tuple2 e_int e_int) cb ep) (fun ep ->
++            Some <| { file_name = fl ; start_pos = sp ; end_pos = ep })))
++
++        | _ ->
++            Err.log_issue Range.dummyRange (Err.Warning_NotEmbedded, (BU.format1 "Not an embedded rng_view: %s" (t_to_string t)));
++            None
++    in
++    mk_emb' embed_rng_view unembed_rng_view fstar_refl_rng_view_fv
++
+ let e_comp_view =
+     let embed_comp_view cb (cv : comp_view) : t =
+         match cv with
+diff --git a/src/reflection/FStar.Reflection.NBEEmbeddings.fsi b/src/reflection/FStar.Reflection.NBEEmbeddings.fsi
+index a9c502dec4d..747fbc27d75 100644
+--- a/src/reflection/FStar.Reflection.NBEEmbeddings.fsi
++++ b/src/reflection/FStar.Reflection.NBEEmbeddings.fsi
+@@ -30,6 +30,7 @@ val e_order       : embedding<order>
+ val e_sigelt      : embedding<sigelt>
+ val e_sigelt_view : embedding<sigelt_view>
+ val e_bv_view     : embedding<bv_view>
++val e_rng_view    : embedding<rng_view>
+ val e_exp         : embedding<exp>
+ val e_attribute   : embedding<attribute>
+ val e_attributes  : embedding<list<attribute>> (* This seems rather silly, but `attributes` is a keyword *)
+diff --git a/ulib/FStar.Reflection.Builtins.fsti b/ulib/FStar.Reflection.Builtins.fsti
+index a7b71a014fe..2af862f90d6 100644
+--- a/ulib/FStar.Reflection.Builtins.fsti
++++ b/ulib/FStar.Reflection.Builtins.fsti
+@@ -97,3 +97,7 @@ irreducible
+ let check_with (vcfg : vconfig) : unit = ()
+ 
+ val subst : bv -> term -> term -> term
++
++val inspect_range: range -> rng_view
++val range_of_term: term -> range
++val range_of_sigelt: sigelt -> range
+diff --git a/ulib/FStar.Reflection.Data.fsti b/ulib/FStar.Reflection.Data.fsti
+index 5e02f9e4bfe..acedb32e988 100644
+--- a/ulib/FStar.Reflection.Data.fsti
++++ b/ulib/FStar.Reflection.Data.fsti
+@@ -58,6 +58,13 @@ type bv_view = {
+     bv_sort : typ;
+ }
+ 
++noeq
++type rng_view = {
++    file_name: string;
++    start_pos: int * int;
++    end_pos:   int * int;
++}
++
+ noeq
+ type term_view =
+   | Tv_Var    : v:bv -> term_view
